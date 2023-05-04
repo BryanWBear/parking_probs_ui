@@ -9,6 +9,7 @@ import ControlPanel from './ControlPanel';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs from "dayjs";
+import Graph from './Graph';
 
 import {csv} from 'd3-request';
 
@@ -111,6 +112,12 @@ function filteredProbsToDict(filteredProbs) {
   return probsDict;
 }
 
+function onStreetClick(info) {
+    console.log("info", info)
+
+
+}
+
 export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYLE}) {
   const [hoverInfo, setHoverInfo] = useState({});
   const [startTime, setStartTime] = useState(dayjs('2022-04-17T15:30'));
@@ -124,7 +131,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
   const filteredProbs = probs.filter(row => row.days === weekday && row.time === startTimeString && row.offset === normalizedOffset);
   const probsDict = filteredProbsToDict(filteredProbs);
 
-  // console.log("filtered probs", probsDict);
+   console.log("filtered probs", probsDict);
 
   const getLineColor = f => {
     const key = f.properties.street_id
@@ -158,6 +165,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
 
       pickable: true,
       onHover: setHoverInfo,
+      onClick: onStreetClick,
 
       updateTriggers: {
         getLineColor: {probsDict},
@@ -191,6 +199,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
     offset={offset}
     onOffsetChange={setOffset}> 
     </ControlPanel>
+    <Graph></Graph>
     </LocalizationProvider>
   );
 }

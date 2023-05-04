@@ -6,6 +6,8 @@ import InputLabel from '@mui/material/InputLabel';
 import Slider from '@mui/material/Slider';
 
 
+
+
 function ControlPanel(props) {
   const [windowDimensions, setWindowDimensions] = useState({
     width: window.innerWidth,
@@ -168,11 +170,15 @@ function ControlPanel(props) {
             }}
           />
       </div>
+
+
+
     </div>
   );
 }
 
 export default ControlPanel;
+
 
 
 
