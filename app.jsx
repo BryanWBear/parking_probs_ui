@@ -38,7 +38,7 @@ export const COLOR_SCALE = scaleThreshold()
     [51, 0, 0]         // Deep Maroon
   ]);
 
-const WIDTH_SCALE = scaleLinear().clamp(true).domain([0, 1]).range([5, 30]);
+const WIDTH_SCALE = scaleLinear().clamp(true).domain([0, 1]).range([10, 50]);
 
 const INITIAL_VIEW_STATE = {
   latitude: 37.755,
@@ -66,38 +66,36 @@ function aggregateAccidents(accidents) {
   return {incidents, fatalities};
 }
 
-function renderTooltip({fatalities, incidents, year, hoverInfo}) {
-  return null;
-  // const {object, x, y} = hoverInfo;
+function renderTooltip({probsDict, hoverInfo}) {
+  const {object, x, y} = hoverInfo;
 
-  // if (!object) {
-  //   return null;
-  // }
+  if (!object || !probsDict) {
+    return null;
+  }
 
-  // const props = object.properties;
+  const props = object.properties;
   // const key = getKey(props);
-  // const f = fatalities[year][key];
-  // const r = incidents[year][key];
+  const r = probsDict[props.street_id];
 
-  // const content = r ? (
-  //   <div>
-  //     <b>{f}</b> people died in <b>{r}</b> crashes on{' '}
-  //     {props.type === 'SR' ? props.state : props.type}-{props.id} in <b>{year}</b>
-  //   </div>
-  // ) : (
-  //   <div>
-  //     no accidents recorded in <b>{year}</b>
-  //   </div>
-  // );
+  const content = r ? (
+    <div>
+      <b>{Math.round(r * 100) / 100}</b> probability of getting a ticket.
 
-  // return (
-  //   <div className="tooltip" style={{left: x, top: y}}>
-  //     <big>
-  //       {props.name} ({props.state})
-  //     </big>
-  //     {content}
-  //   </div>
-  // );
+    </div>
+  ) : (
+    <div>
+      0 probability of getting a ticket / no meters.
+    </div>
+  );
+
+  return (
+    <div className="tooltip" style={{left: x, top: y}}>
+      <big>
+      {props.street_id}
+      </big>
+      {content}
+    </div>
+  );
 }
 
 function filteredProbsToDict(filteredProbs) {
@@ -114,14 +112,12 @@ function filteredProbsToDict(filteredProbs) {
 }
 
 export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYLE}) {
-  // console.log("color scale", COLOR_SCALE)
   const [hoverInfo, setHoverInfo] = useState({});
   const [startTime, setStartTime] = useState(dayjs('2022-04-17T15:30'));
   const startTimeString = startTime.format("HH:mm:00");
 
   const [offset, setOffset] = useState(15);
   const [weekday, setWeekday] = useState("Monday")
-  // const {incidents, fatalities} = useMemo(() => aggregateAccidents(accidents), [accidents]);
   // console.log("incidents", incidents)
 
   const normalizedOffset = Math.floor(offset / 15) - 1
@@ -161,7 +157,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
       getLineWidth,
 
       pickable: true,
-      // onHover: setHoverInfo,
+      onHover: setHoverInfo,
 
       updateTriggers: {
         getLineColor: {probsDict},
@@ -175,6 +171,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
     })
   ];
 
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
     <DeckGL
@@ -185,7 +182,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
     >
       <Map reuseMaps mapLib={maplibregl} mapStyle={mapStyle} preventStyleDiffing={true} />
 
-      {/* {renderTooltip({incidents, fatalities, year, hoverInfo})} */}
+      {renderTooltip({probsDict, hoverInfo})}
     </DeckGL>
     <ControlPanel weekday={weekday} 
     onWeekdayChange={setWeekday} 
