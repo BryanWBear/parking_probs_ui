@@ -13,11 +13,15 @@ function ControlPanel(props) {
   });
 
   const { weekday, onWeekdayChange, startTime, onStartTimeChange, offset, onOffsetChange} = props;
-  
+
   const handleWeekdayChange = (event) => {
     onWeekdayChange(event.target.value);
   };  
 
+
+  const handleOffsetChange = (event) => {
+    onOffsetChange(event.target.value);
+  };
 
   const marks = [
     {
@@ -148,7 +152,7 @@ function ControlPanel(props) {
             id='duration-picker'
             aria-label="Parking Duration"
             value={offset}
-            onChange={onOffsetChange}
+            onChange={handleOffsetChange}
             valueLabelDisplay="auto"
             step={15}
             marks={marks}
