@@ -52,6 +52,10 @@ function ControlPanel(props) {
       value: 105,
       label: '105',
     },
+    {
+      value: 120,
+      label: '120',
+    },
   ];
 
   useEffect(() => {
@@ -157,7 +161,7 @@ function ControlPanel(props) {
             step={15}
             marks={marks}
             min={15}
-            max={105}
+            max={120}
             sx={{
               width: 350,
               color: '#4c5661',
