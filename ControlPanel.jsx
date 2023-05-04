@@ -156,7 +156,7 @@ function ControlPanel(props) {
             max={105}
             sx={{
               width: 350,
-              color: 'royalblue',
+              color: '#4c5661',
             }}
           />
       </div>
