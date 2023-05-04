@@ -13,32 +13,32 @@ import dayjs from "dayjs";
 import {csv} from 'd3-request';
 
 // Source data GeoJSON
-const DATA_URL = {
-  ACCIDENTS:
-    'https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/highway/accidents.csv',
+const DATA_PATH = {
+  PROBS:
+    './probs_with_offset.csv',
   ROADS: './streets.json'
 };
 
-function getKey({state, type, id}) {
+function getKey({days, streets, }) {
   return `${state}-${type}-${id}`;
 }
 
 export const COLOR_SCALE = scaleThreshold()
   .domain([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1])
   .range([
-    [26, 152, 80],
-    [102, 189, 99],
-    [166, 217, 106],
-    [217, 239, 139],
-    [255, 255, 191],
-    [254, 224, 139],
-    [253, 174, 97],
-    [244, 109, 67],
-    [215, 48, 39],
-    [168, 0, 0]
+    [255, 255, 0],     // Yellow
+    [255, 204, 0],     // Yellow-Orange
+    [255, 153, 0],     // Orange
+    [255, 102, 0],     // Orange-Red
+    [255, 51, 0],      // Red-Orange
+    [255, 0, 0],       // Red
+    [204, 0, 0],       // Dark Red
+    [153, 0, 0],       // Maroon
+    [102, 0, 0],       // Dark Maroon
+    [51, 0, 0]         // Deep Maroon
   ]);
 
-const WIDTH_SCALE = scaleLinear().clamp(true).domain([0, 200]).range([10, 2000]);
+const WIDTH_SCALE = scaleLinear().clamp(true).domain([0, 1]).range([5, 30]);
 
 const INITIAL_VIEW_STATE = {
   latitude: 37.755,
@@ -67,67 +67,83 @@ function aggregateAccidents(accidents) {
 }
 
 function renderTooltip({fatalities, incidents, year, hoverInfo}) {
-  const {object, x, y} = hoverInfo;
+  return null;
+  // const {object, x, y} = hoverInfo;
 
-  if (!object) {
-    return null;
-  }
+  // if (!object) {
+  //   return null;
+  // }
 
-  const props = object.properties;
-  const key = getKey(props);
-  const f = fatalities[year][key];
-  const r = incidents[year][key];
+  // const props = object.properties;
+  // const key = getKey(props);
+  // const f = fatalities[year][key];
+  // const r = incidents[year][key];
 
-  const content = r ? (
-    <div>
-      <b>{f}</b> people died in <b>{r}</b> crashes on{' '}
-      {props.type === 'SR' ? props.state : props.type}-{props.id} in <b>{year}</b>
-    </div>
-  ) : (
-    <div>
-      no accidents recorded in <b>{year}</b>
-    </div>
-  );
+  // const content = r ? (
+  //   <div>
+  //     <b>{f}</b> people died in <b>{r}</b> crashes on{' '}
+  //     {props.type === 'SR' ? props.state : props.type}-{props.id} in <b>{year}</b>
+  //   </div>
+  // ) : (
+  //   <div>
+  //     no accidents recorded in <b>{year}</b>
+  //   </div>
+  // );
 
-  return (
-    <div className="tooltip" style={{left: x, top: y}}>
-      <big>
-        {props.name} ({props.state})
-      </big>
-      {content}
-    </div>
-  );
+  // return (
+  //   <div className="tooltip" style={{left: x, top: y}}>
+  //     <big>
+  //       {props.name} ({props.state})
+  //     </big>
+  //     {content}
+  //   </div>
+  // );
 }
 
-export default function App({roads = DATA_URL.ROADS, accidents, mapStyle = MAP_STYLE}) {
-  // console.log("accidents", accidents)
+function filteredProbsToDict(filteredProbs) {
+  const probsDict = {}
+  if (filteredProbs) {
+    filteredProbs.forEach(
+      p => {
+        probsDict[p.streets] = p.prob
+      }
+    );
+  }
+
+  return probsDict;
+}
+
+export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYLE}) {
   // console.log("color scale", COLOR_SCALE)
-  const year = 2000;
   const [hoverInfo, setHoverInfo] = useState({});
   const [startTime, setStartTime] = useState(dayjs('2022-04-17T15:30'));
+  const startTimeString = startTime.format("HH:mm:00");
+
   const [offset, setOffset] = useState(15);
   const [weekday, setWeekday] = useState("Monday")
-  const {incidents, fatalities} = useMemo(() => aggregateAccidents(accidents), [accidents]);
+  // const {incidents, fatalities} = useMemo(() => aggregateAccidents(accidents), [accidents]);
   // console.log("incidents", incidents)
 
+  const normalizedOffset = Math.floor(offset / 15) - 1
+  const filteredProbs = probs.filter(row => row.days === weekday && row.time === startTimeString && row.offset === normalizedOffset);
+  const probsDict = filteredProbsToDict(filteredProbs);
+
+  // console.log("filtered probs", probsDict);
+
   const getLineColor = f => {
-    // if (!fatalities[year]) {
-    //   return [200, 200, 200];
-    // }
-    // const key = getKey(f.properties);
-    // const fatalitiesPer1KMile = ((fatalities[year][key] || 0) / f.properties.length) * 1000;
-    // return COLOR_SCALE(fatalitiesPer1KMile);
-    return [200, 200, 200]
+    const key = f.properties.street_id
+    if (!probsDict[key]) {
+      return [200, 200, 200];
+    }
+    return COLOR_SCALE(probsDict[key]);
   };
 
   const getLineWidth = f => {
-    // if (!incidents[year]) {
-    //   return 10;
-    // }
-    // const key = getKey(f.properties);
-    // const incidentsPer1KMile = ((incidents[year][key] || 0) / f.properties.length) * 1000;
-    // return WIDTH_SCALE(incidentsPer1KMile);
-    return 10;
+    const key = f.properties.street_id
+    if (!probsDict[key]) {
+      return 5;
+    }
+    return WIDTH_SCALE(probsDict[key]);
   };
 
   const layers = [
@@ -145,11 +161,11 @@ export default function App({roads = DATA_URL.ROADS, accidents, mapStyle = MAP_S
       getLineWidth,
 
       pickable: true,
-      onHover: setHoverInfo,
+      // onHover: setHoverInfo,
 
       updateTriggers: {
-        getLineColor: {year},
-        getLineWidth: {year}
+        getLineColor: {probsDict},
+        getLineWidth: {probsDict}
       },
 
       transitions: {
@@ -169,7 +185,7 @@ export default function App({roads = DATA_URL.ROADS, accidents, mapStyle = MAP_S
     >
       <Map reuseMaps mapLib={maplibregl} mapStyle={mapStyle} preventStyleDiffing={true} />
 
-      {renderTooltip({incidents, fatalities, year, hoverInfo})}
+      {/* {renderTooltip({incidents, fatalities, year, hoverInfo})} */}
     </DeckGL>
     <ControlPanel weekday={weekday} 
     onWeekdayChange={setWeekday} 
@@ -188,13 +204,13 @@ export function renderToDOM(container) {
 
   const formatRow = d => ({
     ...d,
-    incidents: Number(d.incidents),
-    fatalities: Number(d.fatalities)
+    offset: Number(d.offset),
+    prob: Number(d.prob)
   });
 
-  csv(DATA_URL.ACCIDENTS, formatRow, (error, response) => {
+  csv(DATA_PATH.PROBS, formatRow, (error, response) => {
     if (!error) {
-      root.render(<App accidents={response}/>);
+      root.render(<App probs={response}/>);
     }
   });
 }
