@@ -25,7 +25,8 @@
     "react-dom": "^18.0.0",
     "react-map-gl": "^7.0.0",
     "react-time-picker": "^6.0.4",
-    "react-time-range": "^1.0.4"
+    "react-time-range": "^1.0.4",
+    "react-vis": "^1.11.12"
   },
   "devDependencies": {
     "typescript": "^4.6.0",

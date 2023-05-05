@@ -20,10 +20,6 @@ const DATA_PATH = {
   ROADS: './streets.json'
 };
 
-function getKey({days, streets, }) {
-  return `${state}-${type}-${id}`;
-}
-
 export const COLOR_SCALE = scaleThreshold()
   .domain([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1])
   .range([
@@ -50,22 +46,6 @@ const INITIAL_VIEW_STATE = {
 };
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
-
-function aggregateAccidents(accidents) {
-  const incidents = {};
-  const fatalities = {};
-
-  if (accidents) {
-    accidents.forEach(a => {
-      const r = (incidents[a.year] = incidents[a.year] || {});
-      const f = (fatalities[a.year] = fatalities[a.year] || {});
-      const key = getKey(a);
-      r[key] = a.incidents;
-      f[key] = a.fatalities;
-    });
-  }
-  return {incidents, fatalities};
-}
 
 function renderTooltip({probsDict, hoverInfo}) {
   const {object, x, y} = hoverInfo;
@@ -112,14 +92,16 @@ function filteredProbsToDict(filteredProbs) {
   return probsDict;
 }
 
-function onStreetClick(info) {
-    console.log("info", info)
-
-
+function onStreetClick(info, probs, weekday, startTimeString) {
+    const streetId = info.object.properties.street_id
+    const filteredProbs = probs.filter(row => row.days === weekday && row.time === startTimeString && row.streets === streetId);
+    return filteredProbs
 }
 
 export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYLE}) {
   const [hoverInfo, setHoverInfo] = useState({});
+  const [selectedFeature, setSelectedFeature] = useState(null);
+  // console.log("selected feature", selectedFeature);
   const [startTime, setStartTime] = useState(dayjs('2022-04-17T15:30'));
   const startTimeString = startTime.format("HH:mm:00");
 
@@ -131,7 +113,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
   const filteredProbs = probs.filter(row => row.days === weekday && row.time === startTimeString && row.offset === normalizedOffset);
   const probsDict = filteredProbsToDict(filteredProbs);
 
-   console.log("filtered probs", probsDict);
+  //  console.log("filtered probs", probsDict);
 
   const getLineColor = f => {
     const key = f.properties.street_id
@@ -165,7 +147,13 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
 
       pickable: true,
       onHover: setHoverInfo,
-      onClick: onStreetClick,
+      onClick: (info) => {
+        if (info.object) {
+          setSelectedFeature(onStreetClick(info, probs, weekday, startTimeString));
+        } else {
+          setSelectedFeature(null);
+        }
+      },
 
       updateTriggers: {
         getLineColor: {probsDict},
@@ -199,7 +187,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
     offset={offset}
     onOffsetChange={setOffset}> 
     </ControlPanel>
-    <Graph></Graph>
+    <Graph selectedFeature={selectedFeature}></Graph>
     </LocalizationProvider>
   );
 }
