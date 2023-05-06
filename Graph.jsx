@@ -81,7 +81,8 @@ function Graph(props) {
             <Hint value={hovered} distance={200}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <p style={{ margin: 0 }}>Duration: {hovered.x} mins</p>
-                <p style={{ margin: 0 }}>Expected Cost: ${hovered.y.toFixed(2)}</p>
+                <p style={{ margin: 0 }}>Expected Cost without Paying: ${hovered.y.toFixed(2)}</p>
+                <p style={{ margin: 0 }}>Expected Cost with Paying: ${(hovered.x/60 * 3.5).toFixed(2)}</p>
               </div>
             </Hint>
             
