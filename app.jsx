@@ -10,6 +10,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs from "dayjs";
 import Graph from './Graph';
+import JSZip from 'jszip';
+import Papa from 'papaparse';
 
 import {csv} from 'd3-request';
 
@@ -195,7 +197,29 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
   );
 }
 
-export function renderToDOM(container) {
+const handleFileUpload = async () => {
+  const filePath = './probs_with_offset.csv.zip'
+  const response = await fetch(filePath);
+  const zippedData = await response.blob();
+
+  // Read the zip file using JSZip
+  const zip = new JSZip();
+  const unzipped = await zip.loadAsync(zippedData);
+  const file = Object.values(unzipped.files)[0];
+
+  if (file && !file.dir && file.name.endsWith('.csv')) {
+    const csvString = await file.async('string');
+    const data = Papa.parse(csvString, {
+      header: true,
+      dynamicTyping: true // set dynamicTyping to true
+    }).data;
+    console.log('CSV parsing complete');
+    // Do something with the data
+    return data
+  }
+};
+
+export async function renderToDOM(container) {
   const root = createRoot(container);
   root.render(<App />);
 
@@ -205,9 +229,13 @@ export function renderToDOM(container) {
     prob: Number(d.prob)
   });
 
-  csv(DATA_PATH.PROBS, formatRow, (error, response) => {
-    if (!error) {
-      root.render(<App probs={response}/>);
-    }
-  });
+  const response = await handleFileUpload();
+  console.log(response)
+  root.render(<App probs={response}/>);
+
+  // csv(DATA_PATH.PROBS, formatRow, (error, response) => {
+  //   if (!error) {
+  //     root.render(<App probs={response}/>);
+  //   }
+  // });
 }
