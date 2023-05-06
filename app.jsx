@@ -100,6 +100,7 @@ function onStreetClick(info, probs, weekday, startTimeString) {
 
 export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYLE}) {
   const [hoverInfo, setHoverInfo] = useState({});
+  const [selectedStreet, setSelectedStreet] = useState(null);
   const [selectedFeature, setSelectedFeature] = useState(null);
   // console.log("selected feature", selectedFeature);
   const [startTime, setStartTime] = useState(dayjs('2022-04-17T15:30'));
@@ -150,8 +151,10 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
       onClick: (info) => {
         if (info.object) {
           setSelectedFeature(onStreetClick(info, probs, weekday, startTimeString));
+          setSelectedStreet(info.object.properties.street_id)
         } else {
           setSelectedFeature(null);
+          setSelectedStreet(null);
         }
       },
 
@@ -187,7 +190,7 @@ export default function App({roads = DATA_PATH.ROADS, probs, mapStyle = MAP_STYL
     offset={offset}
     onOffsetChange={setOffset}> 
     </ControlPanel>
-    <Graph selectedFeature={selectedFeature}></Graph>
+    <Graph selectedFeature={selectedFeature} selectedStreet={selectedStreet}></Graph>
     </LocalizationProvider>
   );
 }
